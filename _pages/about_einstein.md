@@ -2,7 +2,7 @@ match **lang**
 en =>
 
 - A Rustaceans.
-- Interst in game playing, game development, technology exploration, reading(any kind), drawing.
+- Interest in game playing, game development, technology exploration, reading(any kind), drawing.
 
 ch =>
 

@@ -9,7 +9,7 @@ profile:
   image: prof_pic.jpg
   image_circular: false # crops the image to make it circular
   more_info: >
-    <p>enum Interst { Rust, Bevy, IndieGameDev, Exploration }</p>
+    <p>enum Interest { Rust, Bevy, IndieGameDev, Exploration }</p>
     <p>enum Experiments { GameBackendDeveloper, Openresty }</p>
 
 news: true # includes a list of news items
@@ -21,7 +21,7 @@ match **lang**
 en =>
 
 - A Rustaceans.
-- Interst in game playing, game development, technology exploration, reading(any kind), drawing.
+- Interest in game playing, game development, technology exploration, reading(any kind), drawing.
 
 ch =>
 
