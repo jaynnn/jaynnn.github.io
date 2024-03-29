@@ -1,7 +1,7 @@
 ---
 layout: post
 title: tcp的两点问题
-date: 2024-03-29 18:22:00
+date: 2020-05-30 22:09:00
 description: two question about tcp.
 tags: tcp computer-science
 categories: tech
