@@ -2,7 +2,7 @@
 layout: about
 title: about
 permalink: /
-subtitle: #[derive(Game)]
+subtitle: derive(Game)
 
 profile:
   align: right
