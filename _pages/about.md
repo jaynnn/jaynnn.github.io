@@ -9,8 +9,9 @@ profile:
   image: prof_pic.jpg
   image_circular: false # crops the image to make it circular
   more_info: >
-    <p>enum Interest { Rust, Bevy, IndieGameDev, Exploration }</p>
-    <p>enum Experiments { GameBackendDeveloper, Openresty }</p>
+    <p>Technologies: openresty, linux, mysql, redis, bevy </p>
+    <p>Main Languages: lua, rust, c. </p>
+    <p>Jobs: backend developer before, indie game developer now </p>
 
 news: true # includes a list of news items
 selected_papers: true # includes a list of papers marked as "selected={true}"
