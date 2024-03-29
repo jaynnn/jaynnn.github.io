@@ -1,36 +1,29 @@
 ---
 layout: post
-title: a post with formatting and links
+title: tcp的两点问题
 date: 2015-03-15 16:40:16
-description: march & april, looking forward to summer
-tags: formatting links
-categories: sample-posts
+description: two question about tcp.
+tags: tcp computer-science
+categories: tech
 ---
 
-Jean shorts raw denim Vice normcore, art party High Life PBR skateboard stumptown vinyl kitsch. Four loko meh 8-bit, tousled banh mi tilde forage Schlitz dreamcatcher twee 3 wolf moon. Chambray asymmetrical paleo salvia, sartorial umami four loko master cleanse drinking vinegar brunch. [Pinterest](https://www.pinterest.com) DIY authentic Schlitz, hoodie Intelligentsia butcher trust fund brunch shabby chic Kickstarter forage flexitarian. Direct trade <a href="https://en.wikipedia.org/wiki/Cold-pressed_juice">cold-pressed</a> meggings stumptown plaid, pop-up taxidermy. Hoodie XOXO fingerstache scenester Echo Park. Plaid ugh Wes Anderson, freegan pug selvage fanny pack leggings pickled food truck DIY irony Banksy.
+1. 为什么是三次握手，而不是两次、四次？  
+要确保信息传输的完整性，我们需要保证数据具有同步性，tcp连接做的设计是保持初始序列号的同步，即A->B发送seq=j，B回复seq=j+1，这时候A就可以确定B已经同步了自己的序列号了；同理，B->A发送seq=k, A回复seq=k+1，这是双方就都确定信息已经同步。  
+那么问题就很清晰了，为什么不是四次？即  
+```
+    1. A(j)->B
+    2. B(j+1)->A
+    3. B(k)->A
+    4. A(k+1)->B
+```
+很明显，[2]、[3]可以合成一步，多余的事情不必做。为什么不是两次？即
+```
+    1. A(j) -> B
+    2. B(j+1 & k) -> A
+```
+也很明显，B并不能确定A同步了自己的序列号。如果[2]在网络上丢失了，这时候就信誓旦旦建立连接，A可以确定B收到了自己的数据，但B并不能确定数据是否正确到达A。
 
-#### Hipster list
-
-- brunch
-- fixie
-- raybans
-- messenger bag
-
-#### Check List
-
-- [x] Brush Teeth
-- [ ] Put on socks
-  - [x] Put on left sock
-  - [ ] Put on right sock
-- [x] Go to school
-
-Hoodie Thundercats retro, tote bag 8-bit Godard craft beer gastropub. Truffaut Tumblr taxidermy, raw denim Kickstarter sartorial dreamcatcher. Quinoa chambray slow-carb salvia readymade, bicycle rights 90's yr typewriter selfies letterpress cardigan vegan.
-
-<hr>
-
-Pug heirloom High Life vinyl swag, single-origin coffee four dollar toast taxidermy reprehenderit fap distillery master cleanse locavore. Est anim sapiente leggings Brooklyn ea. Thundercats locavore excepteur veniam eiusmod. Raw denim Truffaut Schlitz, migas sapiente Portland VHS twee Bushwick Marfa typewriter retro id keytar.
-
-> We do not grow absolutely, chronologically. We grow sometimes in one dimension, and not in another, unevenly. We grow partially. We are relative. We are mature in one realm, childish in another.
-> —Anais Nin
-
-Fap aliqua qui, scenester pug Echo Park polaroid irony shabby chic ex cardigan church-key Odd Future accusamus. Blog stumptown sartorial squid, gastropub duis aesthetic Truffaut vero. Pinterest tilde twee, odio mumblecore jean shorts lumbersexual.
+2. time_wait的作用  
+time_wait是在主动关闭的一端接收到fin之后进入的状态，为什么需要这个状态呢？原因有两点。  
+- 确保客户端的最终ACK能到达服务器。客户端在收到fin不维护状态信息，则会发送一个错误信息，然后被服务器认定为错误（喂你怎么不转状态，一点反应都没有，是不是崩了），那么服务器就没办法判定这个客户端是否已经关闭了连接（相当于上个问题的[4]没有确认），这时候客户端就需要重传ACK了，若没有TIME_WAIT阶段，客户端已经关闭了，那还怎么重传？  
+- 保证新建立的连接收到的数据包都是新的。首先了解一个假设（事实）：MSL(最大分节生命期)，即数据包在网络上的存活时间不会不会超过MSL秒。当一个连接建立后，可能会发生重传的现象，即有些数据包在网络上乱串没有到达最终主机，但重发的数据包已经到达了目的主机且手都挥完。在最极限的状态下，乱串数据包还有MSL时间到达目的主机，乱串数据包的回包也有MSL时间回到源主机。这时候如果没有等待阶段，直接新建立了一个完全相同的ip和端口组的连接，旧数据包就会影响新连接的数据。因此需要一个TIME_WAIT阶段，且具有2MSL的时间让时间抹去数据的痕迹，让他们不会影响到新的连接。
