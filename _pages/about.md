@@ -21,7 +21,7 @@ social: true # includes social icons at the bottom of the page
 match **lang**  
 en =>
 
-- A Rustaceans.
+- A Rustacean.
 - Interest in game playing, game development, technology exploration, reading(any kind), drawing.
 
 ch =>
