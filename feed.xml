@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" xml:lang="cn, en"><generator uri="https://jekyllrb.com/" version="4.3.3">Jekyll</generator><link href="https://jaynnn.github.io/feed.xml" rel="self" type="application/atom+xml"/><link href="https://jaynnn.github.io/" rel="alternate" type="text/html" hreflang="cn, en"/><updated>2024-07-11T04:20:23+00:00</updated><id>https://jaynnn.github.io/feed.xml</id><title type="html">JaynAlpha</title><subtitle>enum JaynAlphaBlog{Rust, IndieGameDev, bevy} </subtitle><entry><title type="html">redis sorted set 原理</title><link href="https://jaynnn.github.io/blog/2024/redis-sorted_set_implement/" rel="alternate" type="text/html" title="redis sorted set 原理"/><published>2024-07-10T20:33:00+00:00</published><updated>2024-07-10T20:33:00+00:00</updated><id>https://jaynnn.github.io/blog/2024/redis-sorted_set_implement</id><content type="html" xml:base="https://jaynnn.github.io/blog/2024/redis-sorted_set_implement/"><![CDATA[<h2 id="目录">目录</h2> <ol> <li><a href="#前言">前言</a></li> <li><a href="#ziplist&amp;listpack">ziplist &amp;&amp; listpack</a> <ol> <li><a href="#ziplist">ziplist</a></li> <li><a href="#listpack">listpack</a></li> </ol> </li> <li><a href="#skiplist&amp;hash">skiplist+hash</a></li> <li><a href="#参考">参考</a></li> </ol> <h2 id="前言">前言</h2> <ul> <li>在数据元素较少的情况下，redis采用了ziplist(版本7.0之前)和listpack(版本7.0之前)的方式，这种方式相比普通的双向链表，能够保证内存更加有序(内存碎片减少)且节省(每个元素少存了指向前后节点的指针)。在数据元素较多的情况下，采用跳跃表加哈希表的方式。</li> </ul> <h2 id="ziplistlistpack">ziplist&amp;listpack</h2> <h4 id="ziplist">ziplist</h4> <ol> <li>ziplist 就是一种空间紧凑的双向队列。</li> </ol> <p>优势：</p> <ol> <li>内存利用率极高，在双端插入有O(1)的性能，在中间插入和查找有O(n)的性能，别看仅是O(n)，由于内存的连续，充分利用了CPU缓存，在小规模数据中有非常好的性能优势。</li> </ol> <p>缺点：</p> <ol> <li>在于每次插入、删除操作都需要对内存进行调整，性能与内存用量相关。</li> <li>由于每个元素都会保存上一个元素的长度，且这个长度本身占用的内存是会发生变化的，当一个元素的长度发生变化，可能会导致后续的节点长度发生变化，从而引发级联更新(就是对元素A的操作引发了其他元素的变化)。</li> </ol> <p>源码中对ziplist的解释：</p> <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code> The ziplist is a specially encoded dually linked list that is designed to
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" xml:lang="cn, en"><generator uri="https://jekyllrb.com/" version="4.3.3">Jekyll</generator><link href="https://jaynnn.github.io/feed.xml" rel="self" type="application/atom+xml"/><link href="https://jaynnn.github.io/" rel="alternate" type="text/html" hreflang="cn, en"/><updated>2024-07-11T04:22:58+00:00</updated><id>https://jaynnn.github.io/feed.xml</id><title type="html">JaynAlpha</title><subtitle>enum JaynAlphaBlog{Rust, IndieGameDev, bevy} </subtitle><entry><title type="html">redis sorted set 原理</title><link href="https://jaynnn.github.io/blog/2024/redis-sorted_set_implement/" rel="alternate" type="text/html" title="redis sorted set 原理"/><published>2024-07-10T20:33:00+00:00</published><updated>2024-07-10T20:33:00+00:00</updated><id>https://jaynnn.github.io/blog/2024/redis-sorted_set_implement</id><content type="html" xml:base="https://jaynnn.github.io/blog/2024/redis-sorted_set_implement/"><![CDATA[<h2 id="目录">目录</h2> <ol> <li><a href="#前言">前言</a></li> <li><a href="#ziplist&amp;listpack">ziplist &amp;&amp; listpack</a> <ol> <li><a href="#ziplist">ziplist</a></li> <li><a href="#listpack">listpack</a></li> </ol> </li> <li><a href="#skiplist&amp;hash">skiplist+hash</a></li> <li><a href="#参考">参考</a></li> </ol> <h2 id="前言">前言</h2> <ul> <li>在数据元素较少的情况下，redis采用了ziplist(版本7.0之前)和listpack(版本7.0之前)的方式，这种方式相比普通的双向链表，能够保证内存更加有序(内存碎片减少)且节省(每个元素少存了指向前后节点的指针)。在数据元素较多的情况下，采用跳跃表加哈希表的方式。</li> </ul> <h2 id="ziplistlistpack">ziplist&amp;listpack</h2> <h4 id="ziplist">ziplist</h4> <ol> <li>ziplist 就是一种空间紧凑的双向队列。</li> </ol> <p>优势：</p> <ol> <li>内存利用率极高，在双端插入有O(1)的性能，在中间插入和查找有O(n)的性能，别看仅是O(n)，由于内存的连续，充分利用了CPU缓存，在小规模数据中有非常好的性能优势。</li> </ol> <p>缺点：</p> <ol> <li>在于每次插入、删除操作都需要对内存进行调整，性能与内存用量相关。</li> <li>由于每个元素都会保存上一个元素的长度，且这个长度本身占用的内存是会发生变化的，当一个元素的长度发生变化，可能会导致后续的节点长度发生变化，从而引发级联更新(就是对元素A的操作引发了其他元素的变化)。</li> </ol> <p>源码中对ziplist的解释：</p> <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code> The ziplist is a specially encoded dually linked list that is designed to
   be very memory efficient. It stores both strings and integer values, 
   where integers are encoded as actual integers instead of a series of 
   characters. It allows push and pop operations on either side of the list
@@ -13,13 +13,19 @@
  复杂度与ziplist使用的内存量相关。
 </code></pre></div></div> <ol> <li>内存布局 ``` ziplist</li> </ol> <zlbytes> <zltail> <zllen> <entry> <entry> ... <entry> <zlend> entry <prevlen> <encoding> <entry-data>
 ``` 
+
 zlbytes 存储了整个表的内存占用，包含了其本身占用的四个字节。这个字段可以用来避免遍历从而重新调整整个结构的大小。  
+
 zltail 存储了最后一个元素的偏移量，用来弹出最后一个元素而避免遍历。  
+
 zllen 存储了元素的数量，注意这个字段只有两个字节大小，也就是超过2^16-2个元素个数时，该值会设置成2^16-1并且从此获取该值需要遍历所有元素。（这也是ziplist不适合数据元素较多的情形的原因之一。）  
+
 zlend 是特殊的元素，代表着元素列表的末尾。  
+
 entry 由三部分组成。 prevlen 代表着前一个元素的长度，用来从后向前遍历。encoding 存储着元素的类型。entry-data 存储着具体的元素数据（对于小整数可能会没有这个部分）。
 * 对于 prevlen 还要分两种情况，当 prevlen &lt; 254, 则用一个字节来表示；如果 prevlen &gt;= 254 则用 0xFE+四个字节 来表示。
 * 对于 encoding 源码中的图示很清晰，这里借用一下：
+
 ```
 |00pppppp| - 1 byte
     字符串类型，长度 &lt;= 63 字节（6位）。
@@ -43,13 +49,15 @@ entry 由三部分组成。 prevlen 代表着前一个元素的长度，用来�
 |11111111| - 上文提到的 zlend.
 注意：所有的整数都是以小端序存储。
 ```
+
 具体的例子（不得不赞叹一下redis的文档实在详尽）：
+
 ```
 以下是存储了两个数字 2 和 5 的例子，总共占用了15个字节：
 [0f 00 00 00] [0c 00 00 00] [02 00] [00 f3] [02 f6] [ff]
       |             |          |       |       |     |
    zlbytes        zltail     zllen    "2"     "5"   end
-可以看出，小端序下，[0f 00 00 00] 代表整个结构占用15个字节；[0c 00 00 00]代表第12个字节是最后一个元素，即"5"，；[02 00]代表元素数量为2；[00 f3]中，00代表前一个元素的长度，由于没有则为0，f3表示为|1111xxxx|，则3-1=2，存储的是整数2；[02 f6]的02代表前一个元素占用为2个字节，存储数位6-1=5；[ff]总是代表着结构的末尾
+可以看出，小端序下，[0f 00 00 00] 代表整个结构占用15个字节；[0c 00 00 00]代表第12个字节是最后一个元素，即"5"，；[02 00]代表元素数量为2；[00 f3]中，00代表前一个元素的长度，由于没有则为0，f3表示为|1111xxxx|，则3-1=2，存储的是整数2；[02 f6]的02代表前一个元素占用为2个字节，存储数位6-1=5；[ff]总是代表着结构的末尾。
 
 另外一个entry例子：
 [02] [0b] [48 65 6c 6c 6f 20 57 6f 72 6c 64]
@@ -61,6 +69,7 @@ entry 由三部分组成。 prevlen 代表着前一个元素的长度，用来�
 1. listpack 主要解决了 ziplist 中的级联更新的问题。
 2. 内存布局
 与 ziplist 差不多，主要区别在于 entry 的结构不同，不在存储上一个元素的大小，而是存储本元素的大小（注意entry-length一定是在空间布局的最后）。
+
 ```
 <encoding> <entry-data> <entry-length>
 对于 encoding
@@ -80,8 +89,10 @@ entry 由三部分组成。 prevlen 代表着前一个元素的长度，用来�
 1111|0101 to 1111|1110 are currently not used.   当前不用编码
 1111|1111 End of listpack，结尾标识
 ```
+
 3. 既然移除了 prevlen 那么如何做到从后往前遍历呢？  
 这是因为 listpack 特殊设计了 entry-length 结构，它的每个字节的第一位代表了是否为 entry-length 所占用空间的头部，当它需要从后往前遍历时，逐个字节往前找，如果第一位为0，说明已经到头了，当前搜寻的字节拼起来就是前一个元素的大小。  
+
 以下是源码：
 ```
 /* Decode the backlen and returns it. If the encoding looks invalid (more than
@@ -108,7 +119,9 @@ static inline uint64_t lpDecodeBacklen(unsigned char *p) {
     A  ---  C  ---  E
     A - B - C - D - E
     那么就可以从A-E，发现坐过头了，再回到A-C，马上就找到了。在数据规模越大的情况下，这个查询优化越明显。另外，如果需要固定多少个节点就设置一层快捷车道，意味着如果新增元素就需要对原先的层级进行重新排布，这显然不够高效。所以redis的做法是让层数的搭建随机化，最高层数为32层，越高的层数随机到的概率越低，以对数递减的方式（第一层为100%，第二层位50%）。
+
     ![示例](https://p2-jj.byteimg.com/tos-cn-i-t2oaga2asx/gold-user-assets/2019/12/28/16f4ce73b1bf06e4~tplv-t2oaga2asx-jj-mark:3024:0:0:0:q75.awebp)
+    
     2. 哈希表是对跳表的查询效率进行优化，使之能达到O(1)的查询效率。
 
 ## 参考
