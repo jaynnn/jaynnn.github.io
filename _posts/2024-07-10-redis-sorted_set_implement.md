@@ -20,24 +20,37 @@ categories: tech
 
 ## ziplist&listpack
 #### ziplist
-1. ziplist 就是一种空间紧凑的双向队列。
-优势：
-1. 内存利用率极高，在双端插入有O(1)的性能，在中间插入和查找有O(n)的性能，别看仅是O(n)，由于内存的连续，充分利用了CPU缓存，在小规模数据中有非常好的性能优势。
+1. ziplist 就是一种空间紧凑的双向队列。  
+
+优势：  
+1. 内存利用率极高，在双端插入有O(1)的性能，在中间插入和查找有O(n)的性能，别看仅是O(n)，由于内存的连续，充分利用了CPU缓存，在小规模数据中有非常好的性能优势。 
+
 缺点：
 1. 在于每次插入、删除操作都需要对内存进行调整，性能与内存用量相关。
 2. 由于每个元素都会保存上一个元素的长度，且这个长度本身占用的内存是会发生变化的，当一个元素的长度发生变化，可能会导致后续的节点长度发生变化，从而引发级联更新(就是对元素A的操作引发了其他元素的变化)。  
+
 源码中对ziplist的解释：  
 ```
- The ziplist is a specially encoded dually linked list that is designed to be very memory efficient. It stores both strings and integer values, where integers are encoded as actual integers instead of a series of characters. It allows push and pop operations on either side of the list in O(1) time. However, because every operation requires a reallocation of the memory used by the ziplist, the actual complexity is related to the amount of memory used by the ziplist.
+ The ziplist is a specially encoded dually linked list that is designed to
+  be very memory efficient. It stores both strings and integer values, 
+  where integers are encoded as actual integers instead of a series of 
+  characters. It allows push and pop operations on either side of the list
+   in O(1) time. However, because every operation requires a reallocation 
+   of the memory used by the ziplist, the actual complexity is related to 
+   the amount of memory used by the ziplist.
+
  ** 翻译 **：
- ziplist是一种特殊编码的双链表，它是为了高内存效率而设计的。它存储字符串和整数值，其中整数被编码为实际整数而不是一系列字符。它允许在列表的两侧进行在 O(1) 时间复杂度的推入和弹出操作。然而，由于每次操作都需要重新分配ziplist使用的内存，实际复杂度与ziplist使用的内存量相关。
+ ziplist是一种特殊编码的双链表，它是为了高内存效率而设计的。它存储字符串和整数
+ 值，其中整数被编码为实际整数而不是一系列字符。它允许在列表的两侧进行在 O(1) 时间
+ 复杂度的推入和弹出操作。然而，由于每次操作都需要重新分配ziplist使用的内存，实际
+ 复杂度与ziplist使用的内存量相关。
 ```
 2. 内存布局
 ```
-** ziplist
+ziplist
 <zlbytes> <zltail> <zllen> <entry> <entry> ... <entry> <zlend>
 
-** entry
+entry
 <prevlen> <encoding> <entry-data>
 ``` 
 zlbytes 存储了整个表的内存占用，包含了其本身占用的四个字节。这个字段可以用来避免遍历从而重新调整整个结构的大小。  
