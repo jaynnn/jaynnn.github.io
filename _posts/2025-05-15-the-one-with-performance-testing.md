@@ -32,3 +32,7 @@ categories: tech
 
     在linux的实现中，tcp 的三次握手用到了两个队列，一个是接收 sync 时（ sync 队列，也称半连接队列），一个是接收 ack 时（ accpet 队列，也称全连接队列），sync队列的长度由 net.ipv4.tcp_max_syn_backlog 控制；accpet队列长度由 min(backlog, net.core.somaxconn) 控制，其中 backlog 由用户 listen 时传入。当队列堆满，即机器消化连接的速度不够时，就会出现连接被丢弃的情形。
     可以通过设置 somaxconn、增加负载进程或者客户端重试/延缓发送机制解决或绕开该问题。
+
+## 参考
+
+[1] https://www.cnxct.com/something-about-phpfpm-s-backlog/
